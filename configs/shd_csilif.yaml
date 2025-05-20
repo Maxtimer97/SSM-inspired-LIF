@@ -1,0 +1,52 @@
+parameters:
+  model_type:
+    values:
+      - CSiLIF
+  dt_max:
+    values:
+      - 0.5
+  pdrop:
+    values:
+      - 0.1
+  lr:
+    values:
+      - 0.005
+  scheduler_factor:
+    values:
+      - 0.9
+  batch_size:
+    values:
+      - 128
+  nb_steps:
+    values:
+      - 250
+  max_time:
+    values:
+      - 1
+  spatial_bin:
+    values:
+      - 5
+  dataset_name:
+    values:
+      - shd
+  data_folder:
+    values:
+      - //Local/datasets/SHD/
+  only_createsweep:
+    values:
+      - true
+  log_tofile:
+    values:
+      - true
+  seed:
+    values:
+      - 9
+      - 15
+      - 17
+      - 25
+      - 27
+      - 29 
+      - 33
+      - 42
+      - 73
+      - 268

@@ -1,0 +1,37 @@
+parameters:
+  model_type:
+    values:
+      - CSiLIF
+  dt_max:
+    values:
+      - 30
+  pdrop:
+    values:
+      - 0.45
+  lr:
+    values:
+      - 0.01
+  batch_size:
+    values:
+      - 256
+  nb_steps:
+    values:
+      - 300
+  max_time:
+    values:
+      - 1.2
+  spatial_bin:
+    values:
+      - 5
+  dataset_name:
+    values:
+      - ssc
+  data_folder:
+    values:
+      - //Local/datasets/ssc/
+  only_createsweep:
+    values:
+      - true
+  log_tofile:
+    values:
+      - true
