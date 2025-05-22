@@ -33,7 +33,6 @@ from models.anns import ANN
 from models.snns import SNN
 from parsers.model_config import print_model_options
 from parsers.training_config import print_training_options
-from DCLS.construct.modules import Dcls1d
 
 import wandb
 
@@ -66,13 +65,8 @@ class Experiment:
         self.use_bias = config.pop('use_bias')
         self.bidirectional = config.pop('bidirectional')
 
-        self.delays = True if 'delay' in self.model_type.lower() else False
-
-        # self.lif_feature = config.pop('lif_feature')
-
         # Training config
-        self.use_pretrained_model = config.pop('use_pretrained_model')
-        self.only_do_testing = config.pop('only_do_testing')
+        self.evaluate_pretrained = config.pop('evaluate_pretrained')
         self.load_exp_folder = config.pop('load_exp_folder')
         self.new_exp_folder = config.pop('new_exp_folder')
         self.dataset_name = config.pop('dataset_name')
@@ -90,10 +84,8 @@ class Experiment:
         self.reg_fmin = config.pop('reg_fmin')
         self.reg_fmax = config.pop('reg_fmax')
         self.use_augm = config.pop('use_augm')
-        self.s4_opt = config.pop('s4_opt')
 
         self.workers = config.pop('num_workers')
-        self.snnax_optim = config.pop('snnax_optim')
 
         self.nb_steps = config.pop('nb_steps')
         self.max_time = config.pop('max_time')
@@ -103,7 +95,9 @@ class Experiment:
 
         self.seed = config.pop('seed')
         self.set_seed()
-        self.extra_config = config
+
+        self.extra_config = config #remaining config options
+
         # Initialize logging and output folders
         self.init_exp_folders()
         self.init_logging()
@@ -113,87 +107,11 @@ class Experiment:
         logging.info(f"\nDevice is set to {self.device}\n")
 
         
-
         # Initialize dataloaders and model
         self.init_dataset()
         self.init_model()
 
-        # Define optimizer
-        if self.s4_opt:
-            # All parameters in the model
-            all_parameters = list(self.net.parameters())
-
-            # General parameters don't contain the special _optim key
-            params = [p for p in all_parameters if not hasattr(p, "_optim")]
-
-            # Create an optimizer with the general parameters
-            self.opt = torch.optim.AdamW(params, lr=self.lr, weight_decay=0.01)
-
-            # Add parameters with special hyperparameters
-            hps = [getattr(p, "_optim") for p in all_parameters if hasattr(p, "_optim")]
-            hps = [
-                dict(s) for s in sorted(list(dict.fromkeys(frozenset(hp.items()) for hp in hps)))
-            ]  # Unique dicts
-            for hp in hps:
-                params = [p for p in all_parameters if getattr(p, "_optim", None) == hp]
-                self.opt.add_param_group(
-                    {"params": params, **hp}
-                )
-        
-        elif self.snnax_optim:
-            self.opt = torch.optim.AdamW(self.net.parameters(), self.lr, 
-                                         weight_decay=0.01)
-            
-            num_train_iters = len(self.train_loader)
-            # Number of steps for warmup and total decay steps
-            warmup_steps = int(num_train_iters * 1)
-            total_steps = int(self.nb_epochs * num_train_iters)
-
-            # Linear warmup function
-            def lr_lambda_warmup(step):
-                if step < warmup_steps:
-                    # Warmup from learning_rate / warmup_factor to learning_rate
-                    return (step / max(1, warmup_steps)) * (1 - 1 / 3) + (1 / 3)
-                return 1.0
-
-            # Cosine decay after warmup
-            cosine_scheduler = CosineAnnealingLR(self.opt, T_max=total_steps - warmup_steps, 
-                                                eta_min=self.lr * 0.046538863126080535)
-
-            # LambdaLR for warmup phase
-            warmup_scheduler = LambdaLR(self.opt, lr_lambda=lr_lambda_warmup)
-
-            # Function to step both warmup and cosine scheduler
-            def scheduler_step(step):
-                if step < warmup_steps:
-                    warmup_scheduler.step()  # Use warmup LR schedule
-                else:
-                    cosine_scheduler.step()  # Use cosine LR schedule
-
-            self.scheduler_step = lambda x: scheduler_step(x)
-        elif self.delays:
-        # pick out all params with "positions" in their name
-            pos_params = []
-            for m in self.net.modules():
-                if isinstance(m, Dcls1d):
-                    pos_params.append(m.P)
-
-            # 2) build a set of their ids
-            pos_param_ids = { id(p) for p in pos_params }
-
-            # 3) the “other” group is every param whose id is NOT in that set
-            other_params = [
-                p for p in self.net.parameters()
-                if id(p) not in pos_param_ids
-            ]
-
-            # now build your optimizer with two param-groups
-            self.opt = torch.optim.Adam([
-                { "params": pos_params,   "lr": self.lr*10 },  
-                { "params": other_params, "lr": self.lr              },  
-            ])
-        else:
-            self.opt = torch.optim.Adam(self.net.parameters(), self.lr)
+        self.opt = torch.optim.Adam(self.net.parameters(), self.lr)
 
         # Define learning rate scheduler
         self.scheduler = ReduceLROnPlateau(
@@ -215,14 +133,10 @@ class Experiment:
         This function performs model training with the configuration
         specified by the class initialization.
         """
-        if not self.only_do_testing:
+        if not self.evaluate_pretrained:
 
             # Initialize best accuracy
-            if self.use_pretrained_model:
-                logging.info("\n------ Using pretrained model ------\n")
-                best_epoch, best_acc = self.valid_one_epoch(self.start_epoch, 0, 0)
-            else:
-                best_epoch, best_acc = 0, 0
+            best_epoch, best_acc = 0, 0
 
             # Loop over epochs (training + validation)
             logging.info("\n------ Begin training ------\n")
@@ -232,10 +146,10 @@ class Experiment:
                 best_epoch, new_best_acc = self.valid_one_epoch(e, best_epoch, best_acc)
                 if self.dataset_name=="sc":
                     if new_best_acc > 0.92 and new_best_acc>best_acc:
-                        self.test_one_epoch(self.test_loader)
+                        test_acc, test_sop = self.test_one_epoch(self.test_loader)
                 elif self.dataset_name=="ssc":
                     if new_best_acc > 0.74 and new_best_acc>best_acc:
-                        self.test_one_epoch(self.test_loader)
+                        test_acc, test_sop = self.test_one_epoch(self.test_loader)
                 best_acc = new_best_acc
 
 
@@ -249,9 +163,9 @@ class Experiment:
 
             # Loading best model
             if self.save_best:
-                self.net = torch.load(
-                    f"{self.checkpoint_dir}/best_model.pth", map_location=self.device
-                )
+                self.net.load_state_dict(torch.load(
+                    f"{self.checkpoint_dir}/best_model.pth", map_location=self.device)
+                    )
                 logging.info(
                     f"Loading best model, epoch={best_epoch}, valid acc={best_acc}"
                 )
@@ -263,19 +177,21 @@ class Experiment:
 
         # Test trained model
         if self.dataset_name in ["sc", "ssc"]:
-            self.test_one_epoch(self.test_loader)
+            test_acc, test_sop = self.test_one_epoch(self.test_loader)
         else:
-            self.test_one_epoch(self.valid_loader)
+            test_acc, test_sop = self.test_one_epoch(self.valid_loader)
             logging.info(
                 "\nThis dataset uses the same split for validation and testing.\n"
             )
+
+        return test_acc, test_sop
 
     def init_exp_folders(self):
         """
         This function defines the output folders for the experiment.
         """
         # Check if path exists for loading pretrained model
-        if self.use_pretrained_model:
+        if self.evaluate_pretrained:
             exp_folder = self.load_exp_folder
             self.load_path = exp_folder + "/checkpoints/best_model.pth"
             if not os.path.exists(self.load_path):
@@ -289,21 +205,13 @@ class Experiment:
 
         # Generate a path for new model from chosen config
         else:
-            outname = self.dataset_name + "_" + self.model_type + "_"
+            outname = self.dataset_name + "_" + str(self.nb_steps) + "steps_" + self.model_type + "_"
             outname += str(self.nb_layers) + "lay" + str(self.nb_hiddens)
-            outname += "_drop" + str(self.pdrop) + "_" + str(self.normalization)
-            outname += "_bias" if self.use_bias else "_nobias"
-            outname += "_in"+self.extra_config.get('input_layer_type', False) if self.extra_config.get('use_input_layer', False)  else ""
-            #outname += "_bdir" if self.bidirectional else "_udir"
-            #outname += "_reg" if self.use_regularizers else "_noreg"
-            #outname += "_lr" + str(self.lr)
-            outname += "_seed" +str(self.seed) #+ '_'.join(self.lif_feature.keys())
+            outname += "_lr" + str(self.lr) + "_drop" + str(self.pdrop)
+            outname += "_seed" +str(self.seed) 
 
             exp_folder = "exp/test_exps/" + outname.replace(".", "_")
 
-        # # For a new model check that out path does not exist
-        # if not self.use_pretrained_model and os.path.exists(exp_folder):
-        #     raise FileExistsError(errno.EEXIST, os.strerror(errno.EEXIST), exp_folder)
         
         # Create folders to store experiment
         self.log_dir = exp_folder + "/log/"
@@ -435,47 +343,45 @@ class Experiment:
         input_shape = (self.batch_size, None, self.nb_inputs)
         layer_sizes = [self.nb_hiddens] * (self.nb_layers - 1) + [self.nb_outputs]
 
-        if self.use_pretrained_model:
-            self.net = torch.load(self.load_path, map_location=self.device)
+
+        if self.model_type in ["LIF", "CSiLIF", "SiLIF", "adLIF", "CadLIF", "ResonateFire"]:
+
+            self.net = SNN(
+                input_shape=input_shape,
+                layer_sizes=layer_sizes,
+                neuron_type=self.model_type,
+                dropout=self.pdrop,
+                normalization=self.normalization,
+                use_bias=self.use_bias,
+                bidirectional=self.bidirectional,
+                use_readout_layer=True,
+                extra_features = self.extra_config
+            ).to(self.device)
+
+            logging.info(f"\nCreated new spiking model:\n {self.net}\n")
+
+        elif self.model_type in ["MLP", "RNN", "LiGRU", "GRU"]:
+
+            self.net = ANN(
+                input_shape=input_shape,
+                layer_sizes=layer_sizes,
+                ann_type=self.model_type,
+                dropout=self.pdrop,
+                normalization=self.normalization,
+                use_bias=self.use_bias,
+                bidirectional=self.bidirectional,
+                use_readout_layer=True,
+            ).to(self.device)
+
+            logging.info(f"\nCreated new non-spiking model:\n {self.net}\n")
+
+        else:
+            raise ValueError(f"Invalid model type {self.model_type}")
+
+
+        if self.evaluate_pretrained:
+            self.net.load_state_dict(torch.load(self.load_path, map_location=self.device))
             logging.info(f"\nLoaded model at: {self.load_path}\n {self.net}\n")
-
-        # elif self.model_type in ["LIF", "CSiLIF", "SiLIF", "LIFfeature", "adLIFnoClamp", "LIFfeatureDim", "adLIF", "CadLIF", "CadLIFAblation", "RingInitLIFcomplex", "ResonateFire", "RAFAblation", "BRF", "RSEadLIF", "adLIFclamp", "RLIF", "RadLIF", "LIFcomplex","LIFcomplexBroad", "LIFrealcomplex", "ReLULIFcomplex", "RLIFcomplex","RLIFcomplex1MinAlphaNoB","RLIFcomplex1MinAlpha", "LIFcomplex_gatedB", "LIFcomplex_gatedDt", "LIFcomplexDiscr", "DelaySiLIF"]:
-
-        self.net = SNN(
-            input_shape=input_shape,
-            layer_sizes=layer_sizes,
-            neuron_type=self.model_type,
-            dropout=self.pdrop,
-            normalization=self.normalization,
-            use_bias=self.use_bias,
-            bidirectional=self.bidirectional,
-            use_readout_layer=True,
-            extra_features = self.extra_config
-        ).to(self.device)
-
-        logging.info(f"\nCreated new spiking model:\n {self.net}\n")
-
-        # elif self.model_type in ["MLP", "RNN", "LiGRU", "GRU"]:
-
-        #     self.net = ANN(
-        #         input_shape=input_shape,
-        #         layer_sizes=layer_sizes,
-        #         ann_type=self.model_type,
-        #         dropout=self.pdrop,
-        #         normalization=self.normalization,
-        #         use_bias=self.use_bias,
-        #         bidirectional=self.bidirectional,
-        #         use_readout_layer=True,
-        #     ).to(self.device)
-
-        #     logging.info(f"\nCreated new non-spiking model:\n {self.net}\n")
-
-        # else:
-        #     raise ValueError(f"Invalid model type {self.model_type}")
-
-        # if 'LIFcomplex' not in self.model_type:
-        #     torch.set_float32_matmul_precision('high')
-        #     self.net = torch.compile(self.net)
 
         self.nb_params = sum(
             p.numel() for p in self.net.parameters() if p.requires_grad
@@ -491,39 +397,7 @@ class Experiment:
         torch.cuda.manual_seed_all(seed)  # if you are using multi-GPU.
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False
-
-    def get_acc(self, output, y):
-        if self.extra_config['ro_int']!=0:
-            maxs = torch.argmax(output, dim=-1)
-            pred = []
-            # Iterate over the elements in maxs
-            for m in maxs:
-                most_common = torch.mode(m).values.item()  # Find the mode (most frequent element)
-                pred.append(most_common)
         
-            pred = torch.tensor(pred).to(y.device)
-            # Calculate the accuracy by comparing predictions with true labels
-            acc = np.mean((y == pred).detach().cpu().numpy())                
-        else:
-            pred = torch.argmax(output, dim=1)
-            acc = np.mean((y == pred).detach().cpu().numpy())
-        
-        return acc
-
-    def get_loss(self, output, y):
-
-        if self.extra_config['ro_int']!=0:
-            # One-hot encode the labels
-            y_one_hot = F.one_hot(y, num_classes=output.size(-1)).float()
-            # Tile the one-hot encoding (equivalent to jnp.tile in JAX)
-            y_one_hot_tiled = y_one_hot.unsqueeze(1).repeat(1, output.size(1), 1)
-            # Calculate the cross-entropy loss (equivalent to jax.nn.log_softmax)
-            loss_val = -(y_one_hot_tiled * F.log_softmax(output, dim=-1)).mean()                
-        else:
-            # Compute loss
-            loss_val = self.loss_fn(output, y)
-        
-        return loss_val
 
     def train_one_epoch(self, e):
         """
@@ -546,7 +420,7 @@ class Experiment:
             # Forward pass through network
             output, firing_rates, sop = self.net(x)
 
-            loss_val = self.get_loss(output, y)
+            loss_val = self.loss_fn(output, y)
             losses.append(loss_val.item())
 
             # Spike activity
@@ -562,24 +436,12 @@ class Experiment:
             # Backpropagate
             self.opt.zero_grad()
             loss_val.backward()
-            if self.snnax_optim:
-                torch.nn.utils.clip_grad_norm_(self.net.parameters(), 0.1)
             self.opt.step()
 
-            if self.snnax_optim:
-                self.scheduler_step(step)
-
             # Compute accuracy with labels
-
-            acc = self.get_acc(output, y)
+            pred = torch.argmax(output, dim=1)
+            acc = np.mean((y == pred).detach().cpu().numpy())
             accs.append(acc)
-
-            if self.delays:
-                for layer in self.net.snn:
-                    layer.W.clamp_parameters()
-
-        if self.delays:
-            self.net.decrease_sig(e)
 
         # Learning rate of whole epoch
         current_lr = self.opt.param_groups[-1]["lr"]
@@ -628,11 +490,12 @@ class Experiment:
                 output, firing_rates, sop = self.net(x)
 
                 # Compute loss
-                loss_val = self.get_loss(output, y)
+                loss_val = self.loss_fn(output, y)
                 losses.append(loss_val.item())
 
                 # Compute accuracy with labels
-                acc = self.get_acc(output, y)
+                pred = torch.argmax(output, dim=1)
+                acc = np.mean((y == pred).detach().cpu().numpy())
                 accs.append(acc)
 
                 # Spike activity
@@ -657,10 +520,6 @@ class Experiment:
             if not self.debug:
                 wandb.log({"valid loss":valid_loss, "valid acc":valid_acc, "valid sparsity": 1-epoch_spike_rate, "valid sop": epoch_sop/step}, commit=True)
 
-            # Update learning rate
-            if not self.snnax_optim:
-                self.scheduler.step(valid_acc)
-
             # Update best epoch and accuracy
             if valid_acc > best_acc:
                 best_acc = valid_acc
@@ -668,7 +527,7 @@ class Experiment:
 
                 # Save best model
                 if self.save_best:
-                    torch.save(self.net, f"{self.checkpoint_dir}/best_model.pth")
+                    torch.save(self.net.state_dict(), f"{self.checkpoint_dir}/best_model.pth")
                     logging.info(f"\nBest model saved with valid acc={valid_acc}")
 
             logging.info("\n-----------------------------\n")
@@ -700,11 +559,12 @@ class Experiment:
                 output, firing_rates, sop = self.net(x)
 
                 # Compute loss
-                loss_val = self.get_loss(output, y)
+                loss_val = self.loss_fn(output, y)
                 losses.append(loss_val.item())
 
                 # Compute accuracy with labels
-                acc = self.get_acc(output, y)
+                pred = torch.argmax(output, dim=1)
+                acc = np.mean((y == pred).detach().cpu().numpy())
                 accs.append(acc)
 
                 # Spike activity
@@ -732,29 +592,4 @@ class Experiment:
 
             logging.info("\n-----------------------------\n")
 
-            new_result_entry = {
-            'test_acc': test_acc,
-            'number_layers': self.nb_layers,
-            'number_neurons': self.nb_hiddens,
-            'model_type': self.model_type, 
-            'best_val_acc': self.best_val_acc
-            }
-
-            # self.save_results_to_json(new_result_entry)
-
-    def save_results_to_json(self,result_entry):
-        if self.dataset_name == "ssc":
-            filename='resultsSSC.json'
-        if self.dataset_name == "shd":
-            filename='resultsSHD.json'
-
-        try:
-            with open(filename, 'r') as file:
-                results = json.load(file)
-        except FileNotFoundError:
-            results = []
-
-        results.append(result_entry)
-        
-        with open(filename, 'w') as file:
-            json.dump(results, file, indent=4)
+            return test_acc, epoch_sop/step

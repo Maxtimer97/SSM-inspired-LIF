@@ -21,7 +21,6 @@ import logging
 from train import Experiment
 from parsers.model_config import add_model_options
 from parsers.training_config import add_training_options
-import torch
 
 import wandb
 
@@ -30,7 +29,6 @@ logger = logging.getLogger(__name__)
 import yaml
 from pathlib import Path
 import sys
-import os
 
 # Load YAML config if passed
 yaml_config_path = None
@@ -95,7 +93,7 @@ def main(debug_config=None):
     experiment = Experiment(config, DEVICE)
 
     # Run experiment
-    experiment.forward()
+    test_acc, test_sop = experiment.forward()
 
 
 if __name__ == "__main__":
@@ -103,10 +101,10 @@ if __name__ == "__main__":
     # Get experiment configuration from parser
 
     if args.sweep_id and not DEBUG:
-        wandb.agent("maximes_crew/" + args.sweep_id, function=main)
+        wandb.agent(args.sweep_id, function=main)
     else:
         sweep_config = {
-            'method': args.method,  # Method (grid or bayes) is set separately here
+            'method': 'grid', 
             'metric': {
                 'name': "valid acc",   
                 'goal': 'maximize'
@@ -118,61 +116,33 @@ if __name__ == "__main__":
             sweep_config['name'] = args.sweep_name
         delattr(args, 'sweep_name')
 
-        debug_config = {'seed': 42}
+        debug_config = {'seed': 13}
 
-        # Handle lif_feature separately
-        if args.lif_feature:
-            for feat in args.lif_feature:
-                sweep_config['parameters'][feat] = {'values': [True]}
-                debug_config[feat] = True
-
-        delattr(args, 'lif_feature')
-
-        # Process arguments into parameters based on method
+        # Process arguments into parameters
         for arg, value in vars(args).items():
-            # Skip the 'method' argument, as it's handled separately
-            if arg == "method":
-                continue
 
-            if args.method == "grid":
-                if isinstance(value, list):
-                    sweep_config['parameters'][arg] = {'values': value}
-                    debug_config[arg] = value[0]
-                else:
-                    sweep_config['parameters'][arg] = {'values': [value]}
-                    debug_config[arg] = value
-
-            elif args.method == "bayes":
-                if isinstance(value, list) and len(value) == 2 and not isinstance(value[0], bool):  
-                    sweep_config['parameters'][arg] = {
-                        'min': value[0],
-                        'max': value[1]
-                    }
-                    debug_config[arg] = value[0]  
-
-                elif isinstance(value, list):  
-                    sweep_config['parameters'][arg] = {'values': value}
-                    debug_config[arg] = value[0]
-                else:
-                    sweep_config['parameters'][arg] = {'values': [value]}
-                    debug_config[arg] = value
+            if isinstance(value, list):
+                sweep_config['parameters'][arg] = {'values': value}
+                debug_config[arg] = value[0]
+            else:
+                sweep_config['parameters'][arg] = {'values': [value]}
+                debug_config[arg] = value
 
 
         if DEBUG:
             main(debug_config)
         else:
             if args.dataset_name == "shd":
-                project_name="S3_SHD_runs"
+                project_name="SiLIF_SHD_runs"
             elif args.dataset_name == "ssc":
-                project_name="S3_SSC_runs"
+                project_name="SiLIF_SSC_runs"
             elif args.dataset_name == "sc":
-                project_name="S3_SC_runs"
+                project_name="SiLIF_SC_runs"
             elif args.dataset_name == "hd":
-                project_name="S3_HD_runs"
+                project_name="SiLIF_HD_runs"
 
 
             sweep_id = wandb.sweep(sweep_config,
-                                entity="maximes_crew", 
                                 project=project_name) 
 
             print('SWEEP ID: '+sweep_id)

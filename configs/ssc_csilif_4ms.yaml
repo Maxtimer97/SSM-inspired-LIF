@@ -1,7 +1,10 @@
 parameters:
   model_type:
     values:
-      - SiLIF
+      - CSiLIF
+  dt_max:
+    values:
+      - 5
   pdrop:
     values:
       - 0.5
@@ -26,9 +29,9 @@ parameters:
   data_folder:
     values:
       - //Local/datasets/ssc/
-  only_createsweep:
-    values:
-      - true
   log_tofile:
     values:
       - true
+  load_exp_folder:
+    values:
+      - SSM-inspired-LIF/reference_models/ref_SSC_CSiLIF/

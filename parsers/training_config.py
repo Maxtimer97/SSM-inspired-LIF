@@ -48,43 +48,8 @@ def add_training_options(parser):
     parser.add_argument(
         "--only_createsweep",
         type=str2bool,
-        default=[False],
+        default=False,
         help="Only create sweep without launching agent.",
-    )
-    parser.add_argument(
-        "--s4_opt",
-        nargs='+',
-        type=str2bool,
-        default=[False],
-        help="Use the optimizer setup of S4.",
-    )
-    parser.add_argument(
-        "--weight_norm",
-        nargs='+',
-        type=str2bool,
-        default=[False],
-        help="Use the optimizer setup of S4.",
-    )
-    parser.add_argument(
-        "--zero_init",
-        nargs='+',
-        type=str2bool,
-        default=[False],
-        help="Use the optimizer setup of S4.",
-    )
-    parser.add_argument(
-        "--layernorm_readout",
-        nargs='+',
-        type=str2bool,
-        default=[False],
-        help="Use the optimizer setup of S4.",
-    )
-    parser.add_argument(
-        "--snnax_optim",
-        nargs='+',
-        type=str2bool,
-        default=[False],
-        help="Use the optimizer setup of S4.",
     )
     parser.add_argument(
         "--gpu_device",
@@ -100,17 +65,10 @@ def add_training_options(parser):
         help="Fix one or multiple seeds for the runs.",
     )
     parser.add_argument(
-        "--use_pretrained_model",
+        "--evaluate_pretrained",
         type=lambda x: bool(strtobool(str(x))),
         default=False,
-        help="Whether to load a pretrained model or to create a new one.",
-    )
-    parser.add_argument(
-        "--only_do_testing",
-        type=lambda x: bool(strtobool(str(x))),
-        default=False,
-        help="If True, will skip training and only perform testing of the "
-        "loaded model.",
+        help="Only run test on pre-trained model defined by load_exp_folder.",
     )
     parser.add_argument(
         "--load_exp_folder",
@@ -162,26 +120,19 @@ def add_training_options(parser):
         "--nb_steps",
         type=int,
         default=100,
-        help="Number of timesteps.",
+        help="Number of timesteps for SHD and SSC samples.",
     )
     parser.add_argument(
         "--max_time",
         type=float,
-        default=1.4,
-        help="Max time for SHD samples.",
+        default=1.0,
+        help="Max time for SHD and SSC samples.",
     )
     parser.add_argument(
         "--spatial_bin",
         type=int,
-        default=1,
-        help="Spatial binning for SHD.",
-    )
-    parser.add_argument(
-        "--time_offset",
-        nargs="+",
-        type=int,
-        default=[0],
-        help="Offset in # of timesteps to start counting loss.",
+        default=5,
+        help="Spatial binning for SHD and SSC.",
     )
     parser.add_argument(
         "--nb_epochs",
@@ -197,19 +148,11 @@ def add_training_options(parser):
         "model is given. First epoch will be start_epoch+1.",
     )
     parser.add_argument(
-    "--method",
-    choices=["grid", "bayes"],  # Restrict choices to grid or bayes
-    default="grid",            # Optional: set a default if desired
-    help="Choose between grid search or bayesian optimization for the sweep.",
-    )
-
-    parser.add_argument(
         "--lr",
         nargs="+",
         type=float,
-        #default=[1e-2],
-        help="Initial learning rate for training. The default value of 0.01 "
-        "is good for SHD and SC, but 0.001 seemed to work better for HD and SC.",
+        default=[1e-2],
+        help="Initial learning rate for training.",
     )
     parser.add_argument(
         "--scheduler_patience",
@@ -224,8 +167,7 @@ def add_training_options(parser):
         nargs='+',
         type=int,
         default=[8],
-        help="Number of epochs without progress before the learning rate "
-        "gets decreased.",
+        help="Number of workers for the data loader.",
     )
     parser.add_argument(
         "--scheduler_factor",
@@ -279,8 +221,7 @@ def print_training_options(config):
         Training Config
         ---------------
         Debug run: {debug}
-        Use pretrained model: {use_pretrained_model}
-        Only do testing: {only_do_testing}
+        Evaluate pre-trained model: {evaluate_pretrained}
         Load experiment folder: {load_exp_folder}
         New experiment folder: {new_exp_folder}
         Dataset name: {dataset_name}

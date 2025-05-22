@@ -4,31 +4,22 @@ parameters:
       - SiLIF
   pdrop:
     values:
-      - 0.25
+      - 0.5
   lr:
     values:
       - 0.001
-  scheduler_patience:
-    values:
-      - 5
   batch_size:
     values:
-      - 128
-  nb_steps:
-    values:
-      - 250
-  max_time:
-    values:
-      - 1
-  spatial_bin:
+      - 32
+  scheduler_patience:
     values:
       - 5
   dataset_name:
     values:
-      - shd
+      - sc
   data_folder:
     values:
-      - //Local/datasets/SHD/
+      - //Local/datasets/GSC/
   log_tofile:
     values:
       - true

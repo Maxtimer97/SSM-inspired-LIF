@@ -26,9 +26,6 @@ parameters:
   data_folder:
     values:
       - //Local/datasets/SHD/
-  only_createsweep:
-    values:
-      - true
   log_tofile:
     values:
       - true

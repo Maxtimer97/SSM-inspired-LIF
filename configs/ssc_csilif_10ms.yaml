@@ -1,22 +1,25 @@
 parameters:
   model_type:
     values:
-      - ResonateFire
+      - CSiLIF
+  dt_max:
+    values:
+      - 5
   pdrop:
     values:
-      - 0.25
+      - 0.5
   lr:
     values:
-      - 0.01
+      - 0.005
   batch_size:
     values:
       - 256
   nb_steps:
     values:
-      - 300
+      - 100
   max_time:
     values:
-      - 1.2
+      - 1.0
   spatial_bin:
     values:
       - 5
@@ -26,9 +29,6 @@ parameters:
   data_folder:
     values:
       - //Local/datasets/ssc/
-  only_createsweep:
-    values:
-      - true
   log_tofile:
     values:
       - true

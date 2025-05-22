@@ -2,7 +2,7 @@
 
 Official implementation of the SiLIF and C-SiLIF models from the paper "Structured State Space Model Dynamics and Parametrization for Spiking Neural Networks"
 
-![plot](./figs/main_figure.pdf)
+![Method](./figs/main_figure.png)
 
 >📋  Optional: include a graphic explaining your approach/main result, bibtex entry, link to demos, blog posts and tutorials
 
