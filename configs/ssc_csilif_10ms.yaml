@@ -28,7 +28,7 @@ parameters:
       - ssc
   data_folder:
     values:
-      - //Local/datasets/ssc/
+      - ./data/SSC/
   log_tofile:
     values:
       - true

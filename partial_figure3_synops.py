@@ -56,7 +56,7 @@ def parse_args(yaml_config):
 for model in model_configs:
 
     yaml_config = {}
-    config_path = (Path("SSM-inspired-LIF") / "configs" / model_configs[model]).resolve()
+    config_path = "./configs/" + model_configs[model]
     with open(config_path, "r") as f:
         sweep_config = yaml.safe_load(f)
     yaml_config = {
@@ -79,6 +79,8 @@ for model in model_configs:
 
     model_acc = 0
     model_sop = 0
+
+    print("Starting "+ model +" evaluation")
 
     for seed in [13, 42, 73, 128, 268]:
         config = base_config.copy()
@@ -152,7 +154,9 @@ ax2.ticklabel_format(axis='y', style='sci', scilimits=(7,7))
 
 # ax1.set_title("Model Accuracy and Synaptic Operations")
 fig.tight_layout(pad=0.5)
-fig.savefig("SSM-inspired-LIF/figs/figure3_partial.png", bbox_inches='tight')
+fig.savefig("./figs/figure3_partial.png", bbox_inches='tight')
 plt.show()
+
+print("Figure 3 partial plot saved as figure3_partial.png")
 
 ###########################################

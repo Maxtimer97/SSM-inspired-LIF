@@ -25,10 +25,10 @@ parameters:
       - ssc
   data_folder:
     values:
-      - //Local/datasets/ssc/
+      - ./data/SSC/
   log_tofile:
     values:
       - true
   load_exp_folder:
     values:
-      - SSM-inspired-LIF/reference_models/ref_SSC_SiLIF/
+      - ./reference_models/ref_SSC_SiLIF/

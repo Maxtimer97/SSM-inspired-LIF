@@ -1,13 +1,13 @@
 # Copyright (c) 2025 Maxime Fabre and Lyubov Dudchenko
 # This file is part of SSM-inspired-LIF, released under the MIT License.
-#
+
 # Modified from: https://github.com/idiap/sparch
 # Original license: BSD 3-Clause (see third_party/sparch/LICENSE)
-#
+
 # SPDX-FileCopyrightText: © 2022 Idiap Research Institute <contact@idiap.ch>
 # SPDX-FileContributor: Alexandre Bittar <abittar@idiap.ch>
 # SPDX-License-Identifier: BSD-3-Clause
-#
+
 # This file was originally part of the sparch package.
 
 """

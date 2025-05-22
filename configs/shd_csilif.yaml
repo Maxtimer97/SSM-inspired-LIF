@@ -31,7 +31,7 @@ parameters:
       - shd
   data_folder:
     values:
-      - //Local/datasets/SHD/
+      - ./data/SHD/
   log_tofile:
     values:
       - true

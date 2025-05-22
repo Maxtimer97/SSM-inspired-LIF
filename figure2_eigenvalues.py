@@ -29,10 +29,10 @@ plt.rcParams.update({
 
 ### Load the trained models ###
 
-model_paths = {'SiLIF': 'SSM-inspired-LIF/reference_models/ref_SSC_SiLIF/checkpoints/best_model.pth',
-'CSiLIF': 'SSM-inspired-LIF/reference_models/ref_SSC_CSiLIF/checkpoints/best_model.pth',
-'CadLIF': 'SSM-inspired-LIF/reference_models/ref_SSC_CadLIF/checkpoints/best_model.pth',
-'ResonateFire': 'SSM-inspired-LIF/reference_models/ref_SSC_RF/checkpoints/best_model.pth'}
+model_paths = {'SiLIF': './reference_models/ref_SSC_SiLIF/checkpoints/best_model.pth',
+'CSiLIF': './reference_models/ref_SSC_CSiLIF/checkpoints/best_model.pth',
+'CadLIF': './reference_models/ref_SSC_CadLIF/checkpoints/best_model.pth',
+'ResonateFire': './reference_models/ref_SSC_RF/checkpoints/best_model.pth'}
 
 for model in model_paths:
     base_net = SNN(
@@ -229,5 +229,7 @@ ax_histy.set_xscale('log')
 
 
 plt.tight_layout()
-fig.savefig("SSM-inspired-LIF/figs/figure2.png", bbox_inches='tight', dpi=300)
+fig.savefig("./figs/figure2.png", bbox_inches='tight', dpi=300)
 plt.show()
+
+print("Figure 2 saved as figure2.png")

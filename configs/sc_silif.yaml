@@ -19,7 +19,7 @@ parameters:
       - sc
   data_folder:
     values:
-      - //Local/datasets/GSC/
+      - ./data/GSC/
   log_tofile:
     values:
       - true
