@@ -1,5 +1,5 @@
 <!--
-Copyright (c) 2025 Maxime Fabre and Lyubov Dudchenko
+Copyright (c) 2025 XXXX-1 XXXX-2 and XXXX-3 XXXX-4
 This file is part of SSM-inspired-LIF, released under the MIT License.
 
 Modified from: https://github.com/idiap/sparch
