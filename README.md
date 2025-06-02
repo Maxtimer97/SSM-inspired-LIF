@@ -14,7 +14,7 @@ This file was originally part of the sparch package.
 
 # SSM-inspired-LIF
 
-Official implementation of the SiLIF and C-SiLIF models from the paper "Structured State Space Model Dynamics and Parametrization for Spiking Neural Networks". This repository builds upon the [SpArch](https://github.com/idiap/sparch.git) repository introduced by A. Bittar and P. Garner in [A Surrogate Gradient Spiking Baseline for Speech Command Recognition](https://doi.org/10.3389/fnins.2022.865897).
+Official implementation of the SiLIF and C-SiLIF models from the paper "Structured State Space Model Dynamics and Parametrization for Spiking Neural Networks". This repository builds upon the [SpArch](https://github.com/idiap/sparch.git) repository introduced by A. Bittar and P. Garner in _"A Surrogate Gradient Spiking Baseline for Speech Command Recognition"_.
 
 ![Method](./figs/main_figure.png)
 
