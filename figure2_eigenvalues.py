@@ -1,4 +1,4 @@
-# Copyright (c) 2025 XXXX-1 XXXX-2 and XXXX-3 XXXX-4
+# Copyright (c) 2025 Maxime Fabre and Lyubov Dudchenko
 # This file is part of SSM-inspired-LIF, released under the MIT License.
 
 import matplotlib.pyplot as plt
