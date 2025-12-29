@@ -316,14 +316,12 @@ class SiLIFLayer(nn.Module):
 
         a = torch.clamp(self.a, min=self.a_lim[0], max=self.a_lim[1])
         b = torch.clamp(self.b, min=self.b_lim[0], max=self.b_lim[1])
-        B_u = (1- alpha)
-        R_u = (1- alpha)
 
         # Loop over time axis
         for t in range(Wx.shape[1]):
 
-            wt = beta * wt + a * ut + b * st #+ B_w*Wx[:, t, :] 
-            ut = alpha * (ut - st) + B_u* Wx[:, t, :] - R_u * wt
+            wt = beta * wt + a * ut + b * st
+            ut = alpha * (ut - st) + (1 - alpha) * (Wx[:, t, :] - wt)
 
             # Compute spikes with surrogate gradient
             st = self.spike_fct(ut - self.threshold)
