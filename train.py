@@ -516,9 +516,10 @@ class Experiment:
                 epoch_spike_rate /= step
                 logging.info(f"Epoch {e}: valid mean act rate={epoch_spike_rate}")
 
-
             if not self.debug:
                 wandb.log({"valid loss":valid_loss, "valid acc":valid_acc, "valid sparsity": 1-epoch_spike_rate, "valid sop": epoch_sop/step}, commit=True)
+
+            self.scheduler.step(valid_acc)
 
             # Update best epoch and accuracy
             if valid_acc > best_acc:
