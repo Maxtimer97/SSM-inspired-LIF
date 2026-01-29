@@ -160,9 +160,8 @@ class SNN(nn.Module):
 
         # Readout layer
         if self.use_readout_layer:
-            if self.use_readout_layer:
-                if self.neuron_type == 'S4D' or self.neuron_type == 'SS4D' or self.neuron_type == 'Mamba':
-                    snn.append(LinearThenMean(input_size, self.layer_sizes[-1], dim=1))
+            if self.neuron_type == 'S4D' or self.neuron_type == 'SS4D' or self.neuron_type == 'Mamba':
+                snn.append(LinearThenMean(input_size, self.layer_sizes[-1], dim=1))
             else:
                 snn.append(
                     ReadoutLayer(
