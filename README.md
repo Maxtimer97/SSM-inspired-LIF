@@ -48,6 +48,11 @@ We keep the ANN models from SpArch but mostly focus on the SNN ones present in `
 - CadLIF: Reproduced implementation of the constrained AdLIF model introduced by [Deckers et. al. (2024)](https://www.frontiersin.org/journals/neuroscience/articles/10.3389/fnins.2024.1360300/full)
 - ResonateFire (RF): Reproduced reference resonate and fire model following the work by [Higuchi et. al. (2024)](https://arxiv.org/abs/2402.14603) 
 
+Plus some SSM models for comparison:
+- S4D: Diagonalized version of the S4 model directly copied from https://github.com/state-spaces/s4
+- SS4D: Spiking S4D version as introduced by Shen et. al., directly copied from their github repository https://github.com/shenshuaijie/SDN
+- Mamba: Selective gated version of S4D integrated following the S4D backbone. Running Mamba requires to follow the installation for the original [Mamba repository](https://github.com/state-spaces/mamba)
+
 Plus all the models already available in SpArch
 - LIF: LIF neurons without layer-wise recurrent connections
 - RLIF: LIF neurons with layer-wise recurrent connections
@@ -103,15 +108,15 @@ This will run testing on the pre-trained model for 5 different testing seeds. No
 
 Our model achieves the following performance on the different datasets:
 
-| Dataset | Method                     | Resolution | # Params | # Buffers | Top1 Accuracy       |
-|---------|----------------------------|------------|----------|-----------|---------------------|
-| SHD     | C-SiLIF, # hidden 128      | 4 ms       | 38.7k    | 0.5k      | 95.06 ± 0.37%       |
-| SHD     | C-SiLIF, # hidden 512      | 4 ms       | 0.35M    | 2k        | 95.55 ± 0.28%       |
-| SSC     | SiLIF, 10 ms bins          | 10 ms      | 0.35M    | 2k        | 80.11 ± 0.31%       |
-| SSC     | C-SiLIF, 4 ms bins         | 4 ms       | 0.35M    | 2k        | 81.59 ± 0.31%       |
-| SSC     | SiLIF, 4 ms bins           | 4 ms       | 0.35M    | 2k        | 82.03 ± 0.25%       |
-| GSC     | SiLIF, # hidden 512        | 10 ms      | 0.3M     | 2k        | 95.25 ± 0.12%       |
-| GSC     | SiLIF, # hidden 1024       | 10 ms      | 1.1M     | 4k        | 95.49 ± 0.09%       |
+| Dataset | Method                     | Resolution | # Params | Top1 Accuracy       |
+|---------|----------------------------|------------|----------|---------------------|
+| SHD     | C-SiLIF, # hidden 128      | 4 ms       | 38.7k    | 95.06 ± 0.37%       |
+| SHD     | C-SiLIF, # hidden 512      | 4 ms       | 0.35M    | 95.55 ± 0.28%       |
+| SSC     | SiLIF, 10 ms bins          | 10 ms      | 0.35M    | 80.11 ± 0.31%       |
+| SSC     | C-SiLIF, 4 ms bins         | 4 ms       | 0.35M    | 81.59 ± 0.31%       |
+| SSC     | SiLIF, 4 ms bins           | 4 ms       | 0.35M    | 82.03 ± 0.25%       |
+| GSC     | SiLIF, # hidden 512        | 10 ms      | 0.3M     | 95.25 ± 0.12%       |
+| GSC     | SiLIF, # hidden 1024       | 10 ms      | 1.1M     | 95.49 ± 0.09%       |
 
 
 ## Figure Reproduction
