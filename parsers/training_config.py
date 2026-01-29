@@ -52,6 +52,13 @@ def add_training_options(parser):
         help="Only create sweep without launching agent.",
     )
     parser.add_argument(
+        "--s4_opt",
+        nargs='+',
+        type=str2bool,
+        default=[False],
+        help="Use the optimizer setup of S4.",
+    )
+    parser.add_argument(
         "--gpu_device",
         type=int,
         default=0,

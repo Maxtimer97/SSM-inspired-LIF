@@ -76,7 +76,7 @@ class Experiment:
         self.batch_size = config.pop('batch_size')
         self.nb_epochs = config.pop('nb_epochs')
         self.start_epoch = config.pop('start_epoch')
-        self.lr = config.pop('lr')
+        self.lr = config.get('lr')
         self.scheduler_patience = config.pop('scheduler_patience')
         self.scheduler_factor = config.pop('scheduler_factor')
         self.use_regularizers = config.pop('use_regularizers')
@@ -84,6 +84,7 @@ class Experiment:
         self.reg_fmin = config.pop('reg_fmin')
         self.reg_fmax = config.pop('reg_fmax')
         self.use_augm = config.pop('use_augm')
+        self.s4_opt = config.pop('s4_opt')
 
         self.workers = config.pop('num_workers')
 
@@ -111,7 +112,27 @@ class Experiment:
         self.init_dataset()
         self.init_model()
 
-        self.opt = torch.optim.Adam(self.net.parameters(), self.lr)
+
+        # Define optimizer
+        if self.s4_opt:
+            # All parameters in the model
+            all_parameters = list(self.net.parameters())
+            # General parameters don't contain the special _optim key
+            params = [p for p in all_parameters if not hasattr(p, "_optim")]
+            # Create an optimizer with the general parameters
+            self.opt = torch.optim.AdamW(params, lr=self.lr, weight_decay=0.01)
+            # Add parameters with special hyperparameters
+            hps = [getattr(p, "_optim") for p in all_parameters if hasattr(p, "_optim")]
+            hps = [
+                dict(s) for s in sorted(list(dict.fromkeys(frozenset(hp.items()) for hp in hps)))
+            ]  # Unique dicts
+            for hp in hps:
+                params = [p for p in all_parameters if getattr(p, "_optim", None) == hp]
+                self.opt.add_param_group(
+                    {"params": params, **hp}
+                )
+        else:
+            self.opt = torch.optim.Adam(self.net.parameters(), self.lr)
 
         # Define learning rate scheduler
         self.scheduler = ReduceLROnPlateau(
@@ -344,7 +365,7 @@ class Experiment:
         layer_sizes = [self.nb_hiddens] * (self.nb_layers - 1) + [self.nb_outputs]
 
 
-        if self.model_type in ["LIF", "CSiLIF", "SiLIF", "adLIF", "CadLIF", "ResonateFire"]:
+        if self.model_type in ["LIF", "CSiLIF", "SiLIF", "adLIF", "CadLIF", "ResonateFire", "S4D", "SS4D", "Mamba"]:
 
             self.net = SNN(
                 input_shape=input_shape,

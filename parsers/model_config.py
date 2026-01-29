@@ -30,8 +30,7 @@ def add_model_options(parser):
     parser.add_argument(
         "--model_type",
         type=str,
-        choices=["LIF", "CSiLIF", "SiLIF", "adLIF", "CadLIF", "ResonateFire", "RLIF", "RadLIF", "MLP", "RNN", "LiGRU", "GRU"],
-        default="LIF",
+        default="SiLIF",
         help="Type of ANN or SNN model.",
     )
     parser.add_argument(
@@ -63,6 +62,13 @@ def add_model_options(parser):
         help="Number of neurons in all hidden layers.",
     )
     parser.add_argument(
+        "--state_size",
+        nargs='+',
+        type=int,
+        default=[64],
+        help="State size N for SSM models.",
+    )
+    parser.add_argument(
         "--pdrop",
         nargs='+',
         type=float,
@@ -72,7 +78,8 @@ def add_model_options(parser):
     parser.add_argument(
         "--normalization",
         type=str,
-        default="batchnorm",
+        nargs='+',
+        default=["batchnorm"],
         help="Type of normalization, Every string different from batchnorm "
         "and layernorm will result in no normalization.",
     )

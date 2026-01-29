@@ -1,0 +1,40 @@
+parameters:
+  model_type:
+    values:
+      - SS4D
+  s4_opt:
+    values:
+      - true
+  dt_max:
+    values:
+      - 5.0
+  normalization:
+    values:
+      - batchnorm
+  nb_hiddens:
+    values:
+      - 128
+  nb_layers:
+    values:
+      - 7
+  pdrop:
+    values:
+      - 0.1
+  lr:
+    values:
+      - 0.005
+  batch_size:
+    values:
+      - 32
+  scheduler_patience:
+    values:
+      - 5
+  dataset_name:
+    values:
+      - sc
+  data_folder:
+    values:
+      - ./data/GSC/
+  log_tofile:
+    values:
+      - true
