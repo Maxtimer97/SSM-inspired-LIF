@@ -164,9 +164,19 @@ class SpeechCommands(Dataset):
         else:
             self.file_list = load_list(str(split) + "_list.txt")
 
-        self.labels = sorted(next(os.walk(data_folder))[1])[1:]
-        if EXCEPT_FOLDER in self.labels:
-            self.labels.remove(EXCEPT_FOLDER)
+        label_dirs = []
+        for p in Path(data_folder).iterdir():
+            if not p.is_dir():
+                continue
+            if p.name == EXCEPT_FOLDER:
+                continue
+            # class folders contain wav files
+            if any(p.glob("*.wav")):
+                label_dirs.append(p.name)
+        self.labels = sorted(label_dirs)
+        self.label_to_idx = {lbl: i for i, lbl in enumerate(self.labels)}
+        # Sanity check
+        assert len(self.labels) == 35, f"Expected 35 classes, got {len(self.labels)}: {self.labels}"
 
         # Data augmentation
         if use_augm and split == "training":
